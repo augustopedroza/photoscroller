@@ -17,7 +17,7 @@ and very concise code to support UI updates.
 # Improvements
 ## Tests
 * Dependency injection provides higher testability since it provides a loosely coupled design.
-* Mock network 
+* Mock network to avoid false positives dues to network instability.
 ## UI
 * The Grid view should adapt to the screen size (including tablets)
 ## Additional recommended 3rd party components
