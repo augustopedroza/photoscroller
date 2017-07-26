@@ -49,6 +49,10 @@ public class PhotoGalleryActivity extends AppCompatActivity {
 
     private FlickrFetcher mFlickrFetcher;
 
+    //
+    // Butterknife greatly simplify acccess to view components.
+    //
+    
     @BindView(R.id.activity_photo_gallery_recycler_view)
     protected RecyclerView mPhotoRecyclerView;
 
@@ -103,7 +107,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                 if (response.isSuccessful()) {
                     mPhotoItems.addAll(response.body().getPhotos().getPhoto());
                     if (mPhotoItems.size() == 0)
-                        Toast.makeText(getApplicationContext(), "The specified user does not have any photos", Toast.LENGTH_SHORT)
+                        Toast.makeText(getApplicationContext(), R.string.user_no_photos, Toast.LENGTH_SHORT)
                                 .show();
                     else
                         mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
@@ -114,7 +118,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<PhotosResponse> call, Throwable t) {
                 mProgressBar.setVisibility(GONE);
-                Toast.makeText(getApplicationContext(), "Failed to retrieve user information", Toast.LENGTH_SHORT)
+                Toast.makeText(getApplicationContext(), R.string.user_photos_failure, Toast.LENGTH_SHORT)
                         .show();
                 Log.e(TAG, "Failed to retrieve photos for the specified user");
             }
@@ -128,7 +132,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                     User user = response.body().getUser();
                     if (user == null) {
                         mProgressBar.setVisibility(GONE);
-                        Toast.makeText(getApplicationContext(), "User does not exist", Toast.LENGTH_SHORT)
+                        Toast.makeText(getApplicationContext(), R.string.user_does_not_exist, Toast.LENGTH_SHORT)
                                 .show();
                     }
                     else
@@ -138,7 +142,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             @Override
             public void onFailure(Call<UsernameResponse> call, Throwable t) {
                 mProgressBar.setVisibility(GONE);
-                Toast.makeText(getApplicationContext(), "Failed to retrieve user information", Toast.LENGTH_SHORT)
+                Toast.makeText(getApplicationContext(), R.string.user_info_failure, Toast.LENGTH_SHORT)
                 .show();
                 Log.e(TAG, "Failed to retrieve user id for username");
             }
@@ -156,6 +160,8 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 if (response.isSuccessful()) {
+
+                    // TODO: 7/26/17 Consider saving recent images from recent users in a DB to allow offline usage of the app. 
                     InputStream stream = response.body().byteStream();
                     Bitmap bitmap = BitmapFactory.decodeStream(stream);
                     Drawable drawable = new BitmapDrawable(getResources(), bitmap);
@@ -217,6 +223,8 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             Drawable placeholder = getResources().getDrawable(R.mipmap.ic_camera_light);
             holder.bindDrawable(placeholder);
             holder.bindPhotoItem(photo);
+
+            // TODO: 7/26/17 Consider using an image cache to avoid downloading the same images during scrolling
             loadThumbnail(photo, holder);
         }
 

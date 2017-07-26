@@ -8,11 +8,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <ProgressBar
+            android:id="@+id/photo_progress_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:layout_gravity="top"
             android:visibility="@{viewModel.loadInProgress ? View.VISIBLE : View.GONE}"
-            style="?android:attr/progressBarStyleLarge"/>
+            style="?android:attr/progressBarStyleHorizontal"
+            android:indeterminate="true"/>
         <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"

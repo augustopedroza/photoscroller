@@ -9,6 +9,7 @@ import android.graphics.drawable.Drawable;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.pedroza.photoscroller.photoscroller.R;
 import com.pedroza.photoscroller.photoscroller.model.net.FlickrFetcher;
 import com.pedroza.photoscroller.photoscroller.model.response.Photo.Photo;
 
@@ -25,9 +26,17 @@ import retrofit2.Response;
 
 public class PhotoViewModel extends BaseViewModel{
 
+    //
+    //  Observable fields handle automatically inform the UI when to update.
+    //
+
     public ObservableField<Drawable> photoDrawable = new ObservableField<>();
     public ObservableField<String> photoId = new ObservableField<>();
     public ObservableField<String> photoTitle = new ObservableField<>();
+    //
+    // A boolean can be easily converted to visibily by using a conversert. See activity_photo.xml
+    // for its usage.
+    //
     public ObservableField<Boolean> loadInProgress = new ObservableField<>();
 
     private final String TAG = "PVM";
@@ -55,7 +64,6 @@ public class PhotoViewModel extends BaseViewModel{
                     Bitmap bitmap = BitmapFactory.decodeStream(stream);
                     Drawable drawable = new BitmapDrawable(mContext.getResources(), bitmap);
                     loadInProgress.set(false);
-
                     photoDrawable.set(drawable);
 
                 }
@@ -63,7 +71,7 @@ public class PhotoViewModel extends BaseViewModel{
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
                 loadInProgress.set(false);
-                Toast.makeText(mContext, "Unable to download image", Toast.LENGTH_SHORT)
+                Toast.makeText(mContext, R.string.photo_download_failure, Toast.LENGTH_SHORT)
                 .show();
 
                 Log.e(TAG, "Unable to download image");

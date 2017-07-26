@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">PhotoScroller</string>
     <string name="user_name">User Name</string>
+
+    <!--error messages-->
+    <string name="user_no_photos">The specified user does not have any photos</string>
+    <string name="user_photos_failure">Failed to retrieve photos for specified user</string>
+    <string name="user_does_not_exist">User does not exist</string>
+    <string name="user_info_failure">Failed to retrieve user information</string>
+    <string name="photo_download_failure">Unable to download image</string>
 </resources>

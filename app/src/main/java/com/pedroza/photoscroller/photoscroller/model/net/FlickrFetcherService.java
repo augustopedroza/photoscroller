@@ -30,9 +30,9 @@ public class FlickrFetcherService {
                .baseUrl(SERVER_URL)
                .addConverterFactory(GsonConverterFactory.create())
                .client(new OkHttpClient.Builder()
-                       .readTimeout(60_000, TimeUnit.MILLISECONDS)
-                       .writeTimeout(60_000, TimeUnit.MILLISECONDS)
-                       .connectTimeout(60_000, TimeUnit.MILLISECONDS)
+                       .readTimeout(20_000, TimeUnit.MILLISECONDS)
+                       .writeTimeout(20_000, TimeUnit.MILLISECONDS)
+                       .connectTimeout(20_000, TimeUnit.MILLISECONDS)
                        .addInterceptor(createHttpLoggingInterceptor())
                        .addInterceptor(new Interceptor() {
                            @Override
