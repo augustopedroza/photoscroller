@@ -81,6 +81,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
 
         MenuItem searchItem = menu.findItem(R.id.menu_username_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView.setQueryHint(getString(R.string.user_name));
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {

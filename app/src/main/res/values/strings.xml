@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PhotoScroller</string>
+    <string name="app_name">Photo Scroller</string>
     <string name="user_name">User Name</string>
 
     <!--error messages-->

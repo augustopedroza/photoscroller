@@ -1,14 +1,29 @@
 package com.pedroza.photoscroller.photoscroller.view;
 
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v4.content.FileProvider;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.ShareActionProvider;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.widget.ImageView;
 
+import com.pedroza.photoscroller.photoscroller.BuildConfig;
 import com.pedroza.photoscroller.photoscroller.R;
 import com.pedroza.photoscroller.photoscroller.databinding.ActivityPhotoBinding;
 import com.pedroza.photoscroller.photoscroller.model.response.Photo.Photo;
 import com.pedroza.photoscroller.photoscroller.viewmodel.PhotoViewModel;
+
+import java.io.File;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 /**
  * Created by pedroza on 7/25/17.
@@ -18,6 +33,11 @@ public class PhotoActivity extends AppCompatActivity {
 
     static final String PHOTO_INTENT_TAG = "PHOTO";
     private PhotoViewModel mViewModel;
+    private ShareActionProvider mShareActionProvider;
+    private Photo mPhoto = null;
+
+    @BindView(R.id.photo_image_view)
+    protected ImageView mImageView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -32,11 +52,41 @@ public class PhotoActivity extends AppCompatActivity {
         //
 
         ActivityPhotoBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_photo);
+        ButterKnife.bind(this);
         Bundle bundle = getIntent().getExtras();
-
-        mViewModel = new PhotoViewModel(this, (Photo) bundle.getSerializable(PHOTO_INTENT_TAG));
+        mPhoto = (Photo) bundle.getSerializable(PHOTO_INTENT_TAG);
+        mViewModel = new PhotoViewModel(this, mPhoto);
         mViewModel.onStart();
         binding.setViewModel(mViewModel);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        super.onCreateOptionsMenu(menu);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_photo, menu);
+
+        MenuItem item = menu.findItem(R.id.menu_item_share);
+        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
+        return true;
+    }
+
+    public void updateShareIntent(File file) {
+        if (mShareActionProvider != null) {
+            mShareActionProvider.setShareIntent(createShareIntent(file));
+        }
+    }
+
+    private Intent createShareIntent(File file) {
+        Uri bmpUri = FileProvider.getUriForFile(PhotoActivity.this,
+                BuildConfig.APPLICATION_ID + ".provider",
+                file);
+
+        Intent shareIntent = new Intent(Intent.ACTION_SEND);
+        shareIntent.setType("image/jpeg");
+        shareIntent.putExtra(Intent.EXTRA_STREAM,
+                bmpUri);
+        return shareIntent;
     }
 
     @Override
