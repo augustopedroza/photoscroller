@@ -19,7 +19,7 @@ and very concise code to support UI updates.
 * Dependency injection provides higher testability since it provides a loosely coupled design.
 * Mock network to avoid false positives dues to network instability.
 ## UI
-* The Grid view should adapt to the screen size (including tablets)
+* The Grid view should adapt its number of columns to the screen size (including tablets) and to landscape mode.
 ## Additional recommended 3rd party components
 * RxJava - Provides a powerful obvservable pattern framework.
 * Realm - Cloud Data for android. It greatly simplifyes data management support .
