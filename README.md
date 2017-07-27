@@ -22,7 +22,7 @@ and very concise code to support UI updates.
 ## UI
 * The Grid view should adapt its number of columns to the screen size (including tablets) and to landscape mode.
 ## Additional recommended 3rd party components
-* RxJava - Provides a powerful obvservable pattern framework.
+* RxJava - Provides a powerful observable pattern framework.
 * Realm - Cloud Data for android. It greatly simplifyes data management support .
 * Fresco - Efficient image caching.
 * Dagger 2 - Dependency injection framework.
