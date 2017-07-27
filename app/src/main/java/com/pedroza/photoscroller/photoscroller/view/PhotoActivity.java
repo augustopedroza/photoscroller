@@ -1,7 +1,13 @@
 package com.pedroza.photoscroller.photoscroller.view;
 
+import android.content.Context;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
+import android.databinding.Observable;
+import android.databinding.ObservableField;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -21,6 +27,8 @@ import com.pedroza.photoscroller.photoscroller.model.response.Photo.Photo;
 import com.pedroza.photoscroller.photoscroller.viewmodel.PhotoViewModel;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -56,6 +64,15 @@ public class PhotoActivity extends AppCompatActivity {
         Bundle bundle = getIntent().getExtras();
         mPhoto = (Photo) bundle.getSerializable(PHOTO_INTENT_TAG);
         mViewModel = new PhotoViewModel(this, mPhoto);
+        mViewModel.photoDrawable.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
+            @Override
+            public void onPropertyChanged(Observable sender, int propertyId) {
+                ObservableField<Drawable> drawableObservableField = (ObservableField<Drawable>) sender;
+                Drawable drawable = drawableObservableField.get();
+                File file = saveLocalBitmap(drawable);
+                mShareActionProvider.setShareIntent(createShareIntent(file));
+            }
+        });
         mViewModel.onStart();
         binding.setViewModel(mViewModel);
     }
@@ -71,13 +88,34 @@ public class PhotoActivity extends AppCompatActivity {
         return true;
     }
 
-    public void updateShareIntent(File file) {
-        if (mShareActionProvider != null) {
-            mShareActionProvider.setShareIntent(createShareIntent(file));
+    public File saveLocalBitmap(Drawable drawable) {
+        Bitmap bmp = null;
+        File file = null;
+        if (drawable instanceof BitmapDrawable) {
+            bmp = ((BitmapDrawable) drawable).getBitmap();
         }
+
+        if (drawable == null)
+            return null;
+        // Store image to default external storage directory
+        try {
+            file = new File(this.getExternalFilesDir(Context.DOWNLOAD_SERVICE), "share_image_" + System.currentTimeMillis() + ".png");
+            file.getParentFile().mkdirs();
+            FileOutputStream out = new FileOutputStream(file);
+            bmp.compress(Bitmap.CompressFormat.PNG, 90, out);
+            out.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return file;
     }
 
     private Intent createShareIntent(File file) {
+        //
+        // For API >=24 a FileProvider is needed
+        //
         Uri bmpUri = FileProvider.getUriForFile(PhotoActivity.this,
                 BuildConfig.APPLICATION_ID + ".provider",
                 file);
@@ -87,12 +125,6 @@ public class PhotoActivity extends AppCompatActivity {
         shareIntent.putExtra(Intent.EXTRA_STREAM,
                 bmpUri);
         return shareIntent;
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        mViewModel.onStop();
     }
 }
 

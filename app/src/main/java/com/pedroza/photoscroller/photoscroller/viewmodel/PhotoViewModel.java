@@ -12,11 +12,8 @@ import android.widget.Toast;
 import com.pedroza.photoscroller.photoscroller.R;
 import com.pedroza.photoscroller.photoscroller.model.net.FlickrFetcher;
 import com.pedroza.photoscroller.photoscroller.model.response.Photo.Photo;
-import com.pedroza.photoscroller.photoscroller.view.PhotoActivity;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 
 import okhttp3.ResponseBody;
@@ -70,8 +67,6 @@ public class PhotoViewModel extends BaseViewModel{
                     Drawable drawable = new BitmapDrawable(mContext.getResources(), bitmap);
                     loadInProgress.set(false);
                     photoDrawable.set(drawable);
-                    saveLocalBitmap(drawable);
-                    ((PhotoActivity) mContext).updateShareIntent(mFile);
                 }
             }
 
@@ -88,28 +83,6 @@ public class PhotoViewModel extends BaseViewModel{
         mFetcher.loadImage(mPhoto, downloadCallback);
     }
 
-    public void saveLocalBitmap(Drawable drawable) {
-        // Extract Bitmap from ImageView drawable
-
-        Bitmap bmp = null;
-        if (drawable instanceof BitmapDrawable) {
-            bmp = ((BitmapDrawable) drawable).getBitmap();
-        }
-        if (drawable == null)
-            return;
-        // Store image to default external storage directory
-        try {
-            mFile = new File(mContext.getExternalFilesDir(Context.DOWNLOAD_SERVICE), "share_image_" + System.currentTimeMillis() + ".png");
-            mFile.getParentFile().mkdirs();
-            FileOutputStream out = new FileOutputStream(mFile);
-            bmp.compress(Bitmap.CompressFormat.PNG, 90, out);
-            out.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
     public void onPause() {
 
@@ -122,6 +95,5 @@ public class PhotoViewModel extends BaseViewModel{
 
     @Override
     public void onStop() {
-        mFile.delete();
     }
 }
