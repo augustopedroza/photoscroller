@@ -45,9 +45,11 @@ import static com.pedroza.photoscroller.photoscroller.view.PhotoActivity.PHOTO_I
 public class PhotoGalleryActivity extends AppCompatActivity {
 
     private static final String TAG = "PGA";
+    private static final String LATEST_QUERY = "username";
     private List<Photo> mPhotoItems = new ArrayList<>();
 
     private FlickrFetcher mFlickrFetcher;
+    private String mCurrentUserName;
 
     //
     // Butterknife greatly simplify acccess to view components.
@@ -71,6 +73,12 @@ public class PhotoGalleryActivity extends AppCompatActivity {
 
         mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(this,3));
         mPhotoRecyclerView.setAdapter(new PhotoAdapter(mPhotoItems));
+
+        if (savedInstanceState != null)
+           mCurrentUserName = savedInstanceState.getString(LATEST_QUERY);
+
+        if (mCurrentUserName != null)
+            fetchUserPhotos(mCurrentUserName);
     }
 
     @Override
@@ -82,10 +90,12 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         MenuItem searchItem = menu.findItem(R.id.menu_username_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
         searchView.setQueryHint(getString(R.string.user_name));
+
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
                 mProgressBar.setVisibility(View.VISIBLE);
+                mCurrentUserName = query;
                 fetchUserPhotos(query);
                 return true;
             }
@@ -98,6 +108,12 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             }
         });
         return true;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(LATEST_QUERY, mCurrentUserName);
     }
 
     private void fetchUserPhotos(final String username) {
