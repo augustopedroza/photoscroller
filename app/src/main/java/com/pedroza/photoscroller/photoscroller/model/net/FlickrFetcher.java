@@ -32,8 +32,13 @@ public class FlickrFetcher {
         userCall.enqueue(cb);
     }
 
-    public void getListPictures(String userNsId, Callback<PhotosResponse> cb) {
+    public void getListPicturesForUser(String userNsId, Callback<PhotosResponse> cb) {
         Call<PhotosResponse> photosCall = mFetcher.getPhotosByUserId(userNsId, null, null);
+        photosCall.enqueue(cb);
+    }
+
+    public void getListOfRecentPictures(Callback<PhotosResponse> cb) {
+        Call<PhotosResponse> photosCall = mFetcher.getRecentPhotos(null, null);
         photosCall.enqueue(cb);
     }
 

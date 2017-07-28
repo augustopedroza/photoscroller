@@ -79,6 +79,8 @@ public class PhotoGalleryActivity extends AppCompatActivity {
 
         if (mCurrentUserName != null)
             fetchUserPhotos(mCurrentUserName);
+        else
+            fetchRecentPhotos();
     }
 
     @Override
@@ -88,9 +90,16 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         inflater.inflate(R.menu.menu_photo_gallery, menu);
 
         MenuItem searchItem = menu.findItem(R.id.menu_username_search);
-        SearchView searchView = (SearchView) searchItem.getActionView();
+        final SearchView searchView = (SearchView) searchItem.getActionView();
         searchView.setQueryHint(getString(R.string.user_name));
-
+        searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+            @Override
+            public boolean onClose() {
+                fetchRecentPhotos();
+                searchView.onActionViewCollapsed();
+                return true;
+            }
+        });
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
             public boolean onQueryTextSubmit(String query) {
@@ -115,6 +124,30 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putString(LATEST_QUERY, mCurrentUserName);
     }
+
+    private void fetchRecentPhotos() {
+        mProgressBar.setVisibility(View.VISIBLE);
+        final Callback<PhotosResponse> recentResponseCallback = new Callback<PhotosResponse>() {
+            @Override
+            public void onResponse(Call<PhotosResponse> call, Response<PhotosResponse> response) {
+                if (response.isSuccessful()) {
+                    mPhotoItems.addAll(response.body().getPhotos().getPhoto());
+                    mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
+                    mProgressBar.setVisibility(GONE);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<PhotosResponse> call, Throwable t) {
+                mProgressBar.setVisibility(GONE);
+                Toast.makeText(getApplicationContext(), R.string.recent_pictures_failure, Toast.LENGTH_SHORT)
+                        .show();
+                Log.e(TAG, "Failed to retrieve photos for the specified user");
+            }
+        };
+        mFlickrFetcher.getListOfRecentPictures(recentResponseCallback);
+    }
+
 
     private void fetchUserPhotos(final String username) {
 
@@ -153,7 +186,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
                                 .show();
                     }
                     else
-                        mFlickrFetcher.getListPictures(user.getNsid(), photosResponseCallback);
+                        mFlickrFetcher.getListPicturesForUser(user.getNsid(), photosResponseCallback);
                 }
             }
             @Override
