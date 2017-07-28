@@ -1,7 +1,7 @@
 # Activities
 ## PhotoGalleryActivity
 * Uses constraint layout to show its simplicity but in reality that screen is so simple that the full benefits of a flat layout are not leveraged (It is not computationally expensive).
-* Uses the traditional MVC pattern which, in my opinion, decreases testability. Business logic is easily mixed with UI code.
+* Uses the traditional MVC pattern which, in my opinion, decreases testability. Application logic is easily mixed with UI code.
 * Since the list of pictures might be large, a RecyclerView has been chosen to display thumbnails.
 
 ## PhotoActivity
