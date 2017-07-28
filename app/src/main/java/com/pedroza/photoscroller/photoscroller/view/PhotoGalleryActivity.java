@@ -201,10 +201,10 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         mFlickrFetcher.getUserNdId(username, usernameResponseCallback);
     }
 
-    private void loadThumbnail(Photo photo, final PhotoHolder holder) {
+    private Call<ResponseBody> loadThumbnail(Photo photo, final PhotoHolder holder) {
 
         if (photo.getUrl() == null)
-            return;
+            return null;
 
         Callback<ResponseBody> downloadCallback = new Callback<ResponseBody>() {
             @Override
@@ -224,7 +224,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             }
         };
 
-        mFlickrFetcher.loadImage(photo, downloadCallback);
+        return mFlickrFetcher.loadImage(photo, downloadCallback);
     }
 
     private class PhotoHolder extends RecyclerView.ViewHolder
@@ -232,6 +232,8 @@ public class PhotoGalleryActivity extends AppCompatActivity {
 
         private ImageView mPhotoImageView;
         private Photo mPhotoItem;
+        private Call<ResponseBody> mDownloadRequest;
+
 
         public PhotoHolder(View itemView) {
             super(itemView);
@@ -243,6 +245,10 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         public void bindDrawable(Drawable drawable) {mPhotoImageView.setImageDrawable(drawable);}
 
         public void bindPhotoItem(Photo photoItem) {mPhotoItem = photoItem;}
+
+        public void setDownloadRequest(Call<ResponseBody> downloadRequest) { mDownloadRequest = downloadRequest; }
+
+        public void cancelDownloadRequest() { mDownloadRequest.cancel(); }
 
         @Override
         public void onClick(View v) {
@@ -275,12 +281,18 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             holder.bindPhotoItem(photo);
 
             // TODO: 7/26/17 Consider using an image cache to avoid downloading the same images during scrolling
-            loadThumbnail(photo, holder);
+             holder.setDownloadRequest(loadThumbnail(photo, holder));
         }
 
         @Override
         public int getItemCount() {
             return mPhotoItems.size();
+        }
+
+        @Override
+        public void onViewRecycled(PhotoHolder holder) {
+            super.onViewRecycled(holder);
+            holder.cancelDownloadRequest();
         }
     }
 }

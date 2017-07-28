@@ -42,9 +42,11 @@ public class FlickrFetcher {
         photosCall.enqueue(cb);
     }
 
-    public void loadImage(Photo photo, Callback<ResponseBody> downloadCallback ) {
+    public Call<ResponseBody> loadImage(Photo photo, Callback<ResponseBody> downloadCallback ) {
 
         Call<ResponseBody> downloadCall = mFetcher.downloadFileWithDynamicUrl(photo.getUrl());
         downloadCall.enqueue(downloadCallback);
+
+        return downloadCall;
     }
 }
