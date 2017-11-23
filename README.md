@@ -16,21 +16,25 @@ This app by default displays the most recent Flickr photos. It also allows the u
 * Glide
 * Dagger2
 
-## Improvements
+## Recommended Improvements / Future work
+### Architecture
+* Write a generic ViewModel factory.
 ### Error handling
-It is horrendous in its current state. Future Work:
-* Handle nwtork error cases
-* Provide localized error messages
+It is horrendous in its current state.
+* Handle nwtork error cases.
+* Provide localized error messages.
 * Do not use toasts for error messages.
 ### Tests
-Let's be honest, these tests are useless!! Future work:
-* Dependency injection provides higher testability since it provides a loosely coupled design.
+Let's be honest, these tests are useless!!
+* Dependency injection provides higher testability since it provides a loosely coupled design. Use a dagger test component.
 * Mock network to avoid false positives dues to network instability.
 * Rely on mockito and espresso.
+* Write UI unit tests using Robolectric.
 ### UI
-It is plain ugly! Future Work:
+It is plain ugly!
 * The Grid view should adapt its number of columns to the screen size (including tablets) and to landscape mode.
 * Use a modern action bar.
+* Construct photo URL based on display size. The PhotoActivity should fetch a larger size.
 
 ### Additional recommended 3rd party components
 * RxJava - Provides a powerful observable pattern framework.
