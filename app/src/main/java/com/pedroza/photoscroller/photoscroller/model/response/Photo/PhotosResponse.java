@@ -11,17 +11,17 @@ public class PhotosResponse {
 
     @SerializedName("photos")
     @Expose
-    private Photos photos;
+    private PhotoQueryInfo photoQueryInfo;
     @SerializedName("stat")
     @Expose
     private String stat;
 
-    public Photos getPhotos() {
-        return photos;
+    public PhotoQueryInfo getPhotoQueryInfo() {
+        return photoQueryInfo;
     }
 
-    public void setPhotos(Photos photos) {
-        this.photos = photos;
+    public void setPhotoQueryInfo(PhotoQueryInfo photos) {
+        this.photoQueryInfo = photos;
     }
 
     public String getStat() {

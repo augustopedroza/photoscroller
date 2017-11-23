@@ -1,13 +1,8 @@
 package com.pedroza.photoscroller.photoscroller.view;
 
-import android.content.Context;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
-import android.databinding.Observable;
-import android.databinding.ObservableField;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -23,15 +18,16 @@ import android.widget.ImageView;
 import com.pedroza.photoscroller.photoscroller.BuildConfig;
 import com.pedroza.photoscroller.photoscroller.R;
 import com.pedroza.photoscroller.photoscroller.databinding.ActivityPhotoBinding;
-import com.pedroza.photoscroller.photoscroller.model.response.Photo.Photo;
 import com.pedroza.photoscroller.photoscroller.viewmodel.PhotoViewModel;
+import com.pedroza.photoscroller.photoscroller.viewmodel.factories.PhotoViewModelFactory;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+
+import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import dagger.android.AndroidInjection;
 
 /**
  * Created by pedroza on 7/25/17.
@@ -39,16 +35,20 @@ import butterknife.ButterKnife;
 
 public class PhotoActivity extends AppCompatActivity {
 
-    static final String PHOTO_INTENT_TAG = "PHOTO";
+    public static final String PHOTO_ID = "PHOTO_ID";
+
+    @Inject
+    PhotoViewModelFactory mViewModelFactory;
+
     private PhotoViewModel mViewModel;
     private ShareActionProvider mShareActionProvider;
-    private Photo mPhoto = null;
 
     @BindView(R.id.photo_image_view)
     protected ImageView mImageView;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        AndroidInjection.inject(this);
         super.onCreate(savedInstanceState);
 
         //
@@ -62,69 +62,12 @@ public class PhotoActivity extends AppCompatActivity {
         ActivityPhotoBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_photo);
         ButterKnife.bind(this);
         Bundle bundle = getIntent().getExtras();
-        mPhoto = (Photo) bundle.getSerializable(PHOTO_INTENT_TAG);
-        mViewModel = new PhotoViewModel(this, mPhoto);
-        mViewModel.photoDrawable.addOnPropertyChangedCallback(new Observable.OnPropertyChangedCallback() {
-            @Override
-            public void onPropertyChanged(Observable sender, int propertyId) {
-                ObservableField<Drawable> drawableObservableField = (ObservableField<Drawable>) sender;
-                Drawable drawable = drawableObservableField.get();
-                File file = saveLocalBitmap(drawable);
-                mShareActionProvider.setShareIntent(createShareIntent(file));
-            }
-        });
-        mViewModel.onStart();
+        String photoId =  bundle.getString(PHOTO_ID);
+
+        mViewModel = ViewModelProviders.of(this, mViewModelFactory).get(PhotoViewModel.class);
+        mViewModel.setPhotoId(photoId);
+
         binding.setViewModel(mViewModel);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        super.onCreateOptionsMenu(menu);
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_photo, menu);
-
-        MenuItem item = menu.findItem(R.id.menu_item_share);
-        mShareActionProvider = (ShareActionProvider) MenuItemCompat.getActionProvider(item);
-        return true;
-    }
-
-    public File saveLocalBitmap(Drawable drawable) {
-        Bitmap bmp = null;
-        File file = null;
-        if (drawable instanceof BitmapDrawable) {
-            bmp = ((BitmapDrawable) drawable).getBitmap();
-        }
-
-        if (drawable == null)
-            return null;
-        // Store image to default external storage directory
-        try {
-            file = new File(this.getExternalFilesDir(Context.DOWNLOAD_SERVICE), "share_image_" + System.currentTimeMillis() + ".png");
-            file.getParentFile().mkdirs();
-            FileOutputStream out = new FileOutputStream(file);
-            bmp.compress(Bitmap.CompressFormat.PNG, 90, out);
-            out.close();
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return file;
-    }
-
-    private Intent createShareIntent(File file) {
-        //
-        // For API >=24 a FileProvider is needed
-        //
-        Uri bmpUri = FileProvider.getUriForFile(PhotoActivity.this,
-                BuildConfig.APPLICATION_ID + ".provider",
-                file);
-
-        Intent shareIntent = new Intent(Intent.ACTION_SEND);
-        shareIntent.setType("image/jpeg");
-        shareIntent.putExtra(Intent.EXTRA_STREAM,
-                bmpUri);
-        return shareIntent;
     }
 }
 

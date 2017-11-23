@@ -9,7 +9,7 @@ import java.util.List;
  * Created by pedroza on 7/25/17.
  */
 
-public class Photos {
+public class PhotoQueryInfo {
 
     @SerializedName("page")
     @Expose
@@ -25,7 +25,7 @@ public class Photos {
     private String total;
     @SerializedName("photo")
     @Expose
-    private List<Photo> photo = null;
+    private List<Photo> photos = null;
 
     public Integer getPage() {
         return page;
@@ -59,12 +59,12 @@ public class Photos {
         this.total = total;
     }
 
-    public List<Photo> getPhoto() {
-        return photo;
+    public List<Photo> getPhotos() {
+        return photos;
     }
 
-    public void setPhoto(List<Photo> photo) {
-        this.photo = photo;
+    public void setPhotos(List<Photo> photo) {
+        this.photos = photo;
     }
 
 }

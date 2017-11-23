@@ -1,55 +1,47 @@
 package com.pedroza.photoscroller.photoscroller.view;
 
-import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.arch.lifecycle.ViewModelProviders;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
-import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.pedroza.photoscroller.photoscroller.R;
-import com.pedroza.photoscroller.photoscroller.model.net.FlickrFetcher;
 import com.pedroza.photoscroller.photoscroller.model.response.Photo.Photo;
-import com.pedroza.photoscroller.photoscroller.model.response.Photo.PhotosResponse;
-import com.pedroza.photoscroller.photoscroller.model.response.User.User;
-import com.pedroza.photoscroller.photoscroller.model.response.User.UsernameResponse;
+import com.pedroza.photoscroller.photoscroller.view.adapter.PhotoAdapter;
+import com.pedroza.photoscroller.photoscroller.viewmodel.PhotoGalleryViewModel;
+import com.pedroza.photoscroller.photoscroller.viewmodel.factories.PhotoGalleryViewModelFactory;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import okhttp3.ResponseBody;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
-import static android.view.View.GONE;
-import static com.pedroza.photoscroller.photoscroller.view.PhotoActivity.PHOTO_INTENT_TAG;
+import dagger.android.AndroidInjection;
 
 public class PhotoGalleryActivity extends AppCompatActivity {
+
+    @Inject
+    PhotoGalleryViewModelFactory mViewModelFactory;
 
     private static final String TAG = "PGA";
     private static final String LATEST_QUERY = "username";
     private List<Photo> mPhotoItems = new ArrayList<>();
 
-    private FlickrFetcher mFlickrFetcher;
     private String mCurrentUserName;
+    private PhotoGalleryViewModel mViewModel;
 
     //
     // Butterknife greatly simplify acccess to view components.
@@ -61,26 +53,31 @@ public class PhotoGalleryActivity extends AppCompatActivity {
     @BindView(R.id.load_photos_progress_bar)
     protected ProgressBar mProgressBar;
 
-    public PhotoGalleryActivity() {
-        mFlickrFetcher = FlickrFetcher.getInstance();
-    }
+    private PhotoAdapter mPhotoAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AndroidInjection.inject(this);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_photo_gallery);
         ButterKnife.bind(this);
 
-        mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(this,3));
-        mPhotoRecyclerView.setAdapter(new PhotoAdapter(mPhotoItems));
+        mViewModel = ViewModelProviders.of(this, mViewModelFactory).get(PhotoGalleryViewModel.class);
+
+        mViewModel.getPhotos().observe(this, photos -> {
+            setupOrUpdateAdapter(photos);
+        });
+
+        mPhotoRecyclerView.setLayoutManager(new GridLayoutManager(this, 3));
 
         if (savedInstanceState != null)
            mCurrentUserName = savedInstanceState.getString(LATEST_QUERY);
 
         if (mCurrentUserName != null)
-            fetchUserPhotos(mCurrentUserName);
+            mViewModel.loadUserPhotos(mCurrentUserName);
         else
-            fetchRecentPhotos();
+            mViewModel.loadRecentPhotos();
+
     }
 
     @Override
@@ -95,7 +92,7 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         searchView.setOnCloseListener(new SearchView.OnCloseListener() {
             @Override
             public boolean onClose() {
-                fetchRecentPhotos();
+                mViewModel.loadRecentPhotos();
                 searchView.onActionViewCollapsed();
                 return true;
             }
@@ -105,7 +102,9 @@ public class PhotoGalleryActivity extends AppCompatActivity {
             public boolean onQueryTextSubmit(String query) {
                 mProgressBar.setVisibility(View.VISIBLE);
                 mCurrentUserName = query;
-                fetchUserPhotos(query);
+                mViewModel.loadUserPhotos(mCurrentUserName);
+                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(searchView.getWindowToken(), 0);
                 return true;
             }
 
@@ -125,174 +124,22 @@ public class PhotoGalleryActivity extends AppCompatActivity {
         outState.putString(LATEST_QUERY, mCurrentUserName);
     }
 
-    private void fetchRecentPhotos() {
-        mProgressBar.setVisibility(View.VISIBLE);
-        final Callback<PhotosResponse> recentResponseCallback = new Callback<PhotosResponse>() {
-            @Override
-            public void onResponse(Call<PhotosResponse> call, Response<PhotosResponse> response) {
-                if (response.isSuccessful()) {
-                    mPhotoItems.addAll(response.body().getPhotos().getPhoto());
-                    mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
-                    mProgressBar.setVisibility(GONE);
-                }
-            }
+    private void setupOrUpdateAdapter(List<Photo> photos) {
 
-            @Override
-            public void onFailure(Call<PhotosResponse> call, Throwable t) {
-                mProgressBar.setVisibility(GONE);
-                Toast.makeText(getApplicationContext(), R.string.recent_pictures_failure, Toast.LENGTH_SHORT)
-                        .show();
-                Log.e(TAG, "Failed to retrieve photos for the specified user");
-            }
-        };
-        mFlickrFetcher.getListOfRecentPictures(recentResponseCallback);
-    }
+        if ( mPhotoAdapter!= null) {
+            mPhotoAdapter.setPhotoItems(photos);
+            mPhotoAdapter.notifyDataSetChanged();
 
-
-    private void fetchUserPhotos(final String username) {
-
-        final Callback<PhotosResponse> photosResponseCallback = new Callback<PhotosResponse>() {
-            @Override
-            public void onResponse(Call<PhotosResponse> call, Response<PhotosResponse> response) {
-                if (response.isSuccessful()) {
-                    mPhotoItems.addAll(response.body().getPhotos().getPhoto());
-                    if (mPhotoItems.size() == 0)
-                        Toast.makeText(getApplicationContext(), R.string.user_no_photos, Toast.LENGTH_SHORT)
-                                .show();
-                    else
-                        mPhotoRecyclerView.getAdapter().notifyDataSetChanged();
-                    mProgressBar.setVisibility(GONE);
-                }
-            }
-
-            @Override
-            public void onFailure(Call<PhotosResponse> call, Throwable t) {
-                mProgressBar.setVisibility(GONE);
-                Toast.makeText(getApplicationContext(), R.string.user_photos_failure, Toast.LENGTH_SHORT)
-                        .show();
-                Log.e(TAG, "Failed to retrieve photos for the specified user");
-            }
-        };
-
-        Callback<UsernameResponse> usernameResponseCallback = new Callback<UsernameResponse>() {
-            @Override
-            public void onResponse(Call<UsernameResponse> call, Response<UsernameResponse> response) {
-                if (response.isSuccessful()) {
-
-                    User user = response.body().getUser();
-                    if (user == null) {
-                        mProgressBar.setVisibility(GONE);
-                        Toast.makeText(getApplicationContext(), R.string.user_does_not_exist, Toast.LENGTH_SHORT)
-                                .show();
-                    }
-                    else
-                        mFlickrFetcher.getListPicturesForUser(user.getNsid(), photosResponseCallback);
-                }
-            }
-            @Override
-            public void onFailure(Call<UsernameResponse> call, Throwable t) {
-                mProgressBar.setVisibility(GONE);
-                Toast.makeText(getApplicationContext(), R.string.user_info_failure, Toast.LENGTH_SHORT)
-                .show();
-                Log.e(TAG, "Failed to retrieve user id for username");
-            }
-        };
-
-        mFlickrFetcher.getUserNdId(username, usernameResponseCallback);
-    }
-
-    private Call<ResponseBody> loadThumbnail(Photo photo, final PhotoHolder holder) {
-
-        if (photo.getUrl() == null)
-            return null;
-
-        Callback<ResponseBody> downloadCallback = new Callback<ResponseBody>() {
-            @Override
-            public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
-                if (response.isSuccessful()) {
-
-                    // TODO: 7/26/17 Consider saving recent images from recent users in a DB to allow offline usage of the app. 
-                    InputStream stream = response.body().byteStream();
-                    Bitmap bitmap = BitmapFactory.decodeStream(stream);
-                    Drawable drawable = new BitmapDrawable(getResources(), bitmap);
-                    holder.bindDrawable(drawable);
-                }
-            }
-            @Override
-            public void onFailure(Call<ResponseBody> call, Throwable t) {
-                mProgressBar.setVisibility(GONE);
-            }
-        };
-
-        return mFlickrFetcher.loadImage(photo, downloadCallback);
-    }
-
-    private class PhotoHolder extends RecyclerView.ViewHolder
-            implements View.OnClickListener {
-
-        private ImageView mPhotoImageView;
-        private Photo mPhotoItem;
-        private Call<ResponseBody> mDownloadRequest;
-
-
-        public PhotoHolder(View itemView) {
-            super(itemView);
-
-            mPhotoImageView = (ImageView) itemView.findViewById(R.id.photo_gallery_item_image_view);
-            mPhotoImageView.setOnClickListener(this);
+        } else {
+            mPhotoAdapter = new PhotoAdapter(photos, Glide.with(this));
+            mPhotoRecyclerView.setAdapter(mPhotoAdapter);
         }
 
-        public void bindDrawable(Drawable drawable) {mPhotoImageView.setImageDrawable(drawable);}
+        mProgressBar.setVisibility(View.GONE);
 
-        public void bindPhotoItem(Photo photoItem) {mPhotoItem = photoItem;}
-
-        public void setDownloadRequest(Call<ResponseBody> downloadRequest) { mDownloadRequest = downloadRequest; }
-
-        public void cancelDownloadRequest() { mDownloadRequest.cancel(); }
-
-        @Override
-        public void onClick(View v) {
-            Intent intent = new Intent(getApplicationContext(), PhotoActivity.class);
-            intent.putExtra(PHOTO_INTENT_TAG, mPhotoItem);
-            startActivity(intent);
+        if (photos.size() == 0) {
+            Toast.makeText(this, R.string.unable_to_fetch ,Toast.LENGTH_LONG).show();
         }
     }
 
-    private class PhotoAdapter extends RecyclerView.Adapter<PhotoHolder> {
-
-        private List<Photo> mPhotoItems;
-
-        public PhotoAdapter(List<Photo> photoItems) {
-            mPhotoItems = photoItems;
-        }
-        @Override
-        public PhotoHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            // create a new view
-            View view = (ImageView) LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.photo_item, parent, false);
-            return new PhotoHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(PhotoHolder holder, int position) {
-            Photo photo = mPhotoItems.get(position);
-            Drawable placeholder = getResources().getDrawable(R.mipmap.ic_camera_light);
-            holder.bindDrawable(placeholder);
-            holder.bindPhotoItem(photo);
-
-            // TODO: 7/26/17 Consider using an image cache to avoid downloading the same images during scrolling
-             holder.setDownloadRequest(loadThumbnail(photo, holder));
-        }
-
-        @Override
-        public int getItemCount() {
-            return mPhotoItems.size();
-        }
-
-        @Override
-        public void onViewRecycled(PhotoHolder holder) {
-            super.onViewRecycled(holder);
-            holder.cancelDownloadRequest();
-        }
-    }
 }

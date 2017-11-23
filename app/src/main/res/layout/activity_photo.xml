@@ -19,7 +19,7 @@
             android:id="@+id/photo_image_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@{viewModel.photoDrawable}"/>
+            android:photo="@{viewModel}"/>
         <LinearLayout
             android:paddingLeft="5dp"
             android:orientation="vertical"
